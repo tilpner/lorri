@@ -29,7 +29,7 @@ fn main() {
 
         (Command::Shell, Ok(project)) => shell::main(project),
 
-        (Command::Watch, Ok(project)) => watch::main(&project),
+        (Command::Watch(args), Ok(project)) => watch::main(&project, args),
 
         (Command::Upgrade(args), _) => upgrade::main(args),
 

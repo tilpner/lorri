@@ -49,7 +49,7 @@ impl ExitError {
     /// Helpers to create exit results
     ///
     /// Note: err panics if exitcode is zero.
-    fn err<T>(exitcode: i32, message: T) -> OpResult
+    pub fn err<T>(exitcode: i32, message: T) -> OpResult
     where
         T: Into<String>,
     {

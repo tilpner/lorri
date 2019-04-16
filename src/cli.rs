@@ -40,7 +40,7 @@ pub enum Command {
 
     /// Build `shell.nix` whenever an input file changes
     #[structopt(name = "watch")]
-    Watch,
+    Watch(WatchArguments),
 
     /// Upgrade Lorri
     #[structopt(name = "self-upgrade", alias = "self-update")]
@@ -58,6 +58,16 @@ pub struct UpgradeTo {
     /// the path to a local check out of Lorri.
     #[structopt(subcommand)]
     pub source: Option<UpgradeSource>,
+}
+
+/// Arguments to the watch command.
+#[derive(StructOpt, Debug)]
+#[structopt(name = "basic")]
+pub struct WatchArguments {
+    /// Exit after a the first build
+    /// TODO: should probably be its own subcommand?
+    #[structopt(long = "once")]
+    pub once: bool,
 }
 
 /// Version-specifiers of different upgrade targets.
