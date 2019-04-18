@@ -129,12 +129,20 @@ pkgs.mkShell rec {
         travis_fold cargo-clippy cargo clippy
       cargoclippyexit=$?
 
+      # check that the tutorial is up to date and works
+      env LORRI_REPO="$(pwd)" \
+        lorri-mdsh-sandbox \
+          -i $(realpath example/README.md) \
+          --frozen
+      mdshexit=$?
+
       set +x
       echo "cargo test: $cargotestexit"
       echo "cargo fmt: $cargofmtexit"
       echo "cargo clippy: $cargoclippyexit"
+      echo "mdsh on example/README.md: $mdshexit"
 
-      sum=$((cargotestexit + cargofmtexit + cargoclippyexit))
+      sum=$((cargotestexit + cargofmtexit + cargoclippyexit + mdshexit))
       if [ "$sum" -gt 0 ]; then
         return 1
       fi
