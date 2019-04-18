@@ -11,15 +11,14 @@ let
     let
       setupScript = pkgs.writeShellScriptBin "lorri-mdsh-sandbox" ''
         set -e
-        mkdir -p /work/sandbox-home
         export HOME=/work/sandbox-home
+        mkdir -p "$HOME"
 
+        WORK_DIR=/work/lorri
         # copy the lorri repo to the temporary sandbox work directory
         [ -d "''${LORRI_REPO:?LORRI_REPO env var must exist}" ] \
           || (echo "LORRI_REPO must point to the absolute root of the lorri project")
-        cp -r "$LORRI_REPO" /work/lorri
-
-        cd /work/lorri/example
+        cp -r "$LORRI_REPO" "$WORK_DIR"
 
         # required to run `nix-env` in mdsh
         mkdir /work/sandbox-home/.nix-defexpr
@@ -29,8 +28,10 @@ let
           USER="$USER" \
           HOME="$HOME" \
           PATH="$PATH" \
-          NIX_PROFILE=/work/nix-profile \
-            ${pkgs.mdsh}/bin/mdsh --work_dir /work/lorri/example "$@"
+          NIX_PROFILE="$HOME/nix-profile" \
+            ${pkgs.mdsh}/bin/mdsh \
+              --work_dir "$WORK_DIR/$SANDBOX_RELATIVE_WORK_DIR" \
+              "$@"
       '';
     in pkgs.buildSandbox setupScript {
       # the whole nix store is mounted in the sandbox,
@@ -113,6 +114,7 @@ pkgs.mkShell rec {
     export PATH="$LORRI_ROOT/target/debug:$PATH"
 
     function ci_check() (
+      set -u
       cd "$LORRI_ROOT";
       source ./.travis_fold.sh
 
@@ -129,23 +131,38 @@ pkgs.mkShell rec {
         travis_fold cargo-clippy cargo clippy
       cargoclippyexit=$?
 
+      # check that the readme is up to date and works
+      travis_fold mdsh-readme \
+        env \
+          LORRI_REPO="$(pwd)" \
+            lorri-mdsh-sandbox \
+              -i $(realpath README.md) \
+              --frozen
+      readmecheckexit=$?
+
       # check that the tutorial is up to date and works
-      env LORRI_REPO="$(pwd)" \
-        lorri-mdsh-sandbox \
-          -i $(realpath example/README.md) \
-          --frozen
-      mdshexit=$?
+      travis_fold mdsh-tutorial \
+        env \
+          LORRI_REPO="$(pwd)" \
+          SANDBOX_RELATIVE_WORK_DIR="./example" \
+            lorri-mdsh-sandbox \
+              -i $(realpath example/README.md) \
+              --frozen
+      tutorialcheckexit=$?
 
       set +x
       echo "cargo test: $cargotestexit"
       echo "cargo fmt: $cargofmtexit"
       echo "cargo clippy: $cargoclippyexit"
-      echo "mdsh on example/README.md: $mdshexit"
+      echo "mdsh on README.md: $readmecheckexit"
+      echo "mdsh on example/README.md: $tutorialcheckexit"
 
-      sum=$((cargotestexit + cargofmtexit + cargoclippyexit + mdshexit))
+      sum=$((cargotestexit + cargofmtexit + cargoclippyexit + readmecheckexit + tutorialcheckexit))
       if [ "$sum" -gt 0 ]; then
         return 1
       fi
+
+     set +u
     )
 
     echo "lorri" | ${pkgs.figlet}/bin/figlet | ${pkgs.lolcat}/bin/lolcat
