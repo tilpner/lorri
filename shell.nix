@@ -55,6 +55,10 @@ pkgs.mkShell rec {
     pkgs.git
     pkgs.direnv
 
+    # To ensure we always have a compatible nix in our shells.
+    # Travis doesn’t know `nix-env` otherwise.
+    pkgs.nix
+
     # for auto-checking the README.md and tutorial
     mdsh-sandbox
   ] ++
