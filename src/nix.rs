@@ -40,6 +40,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use vec1::Vec1;
 
+use StorePath;
+
 /// Execute Nix commands using a builder-pattern abstraction.
 #[derive(Clone)]
 pub struct CallOpts {
@@ -200,8 +202,8 @@ impl CallOpts {
     ///         .attribute("hello")
     ///         .path(&tempdir.path())
     ///         .unwrap()
-    ///         .into_os_string()
-    ///         .into_string().unwrap()
+    ///         .as_path()
+    ///         .to_string_lossy().into_owned()
     ///         ;
     ///
     /// println!("{:?}", location);
@@ -231,7 +233,7 @@ impl CallOpts {
     ///    otherwise => panic!(otherwise)
     /// }
     /// ```
-    pub fn path(&self, gc_root_dir: &Path) -> Result<PathBuf, OnePathError> {
+    pub fn path(&self, gc_root_dir: &Path) -> Result<StorePath, OnePathError> {
         let mut paths = self.paths(gc_root_dir)?.into_vec();
 
         match (paths.pop(), paths.pop()) {
@@ -267,7 +269,7 @@ impl CallOpts {
     /// assert!(paths.next().unwrap().contains("git-"));
     /// assert!(paths.next().unwrap().contains("hello-"));
     /// ```
-    pub fn paths(&self, gc_root_dir: &Path) -> Result<Vec1<PathBuf>, BuildError> {
+    pub fn paths(&self, gc_root_dir: &Path) -> Result<Vec1<StorePath>, BuildError> {
         if !gc_root_dir.exists() || !gc_root_dir.is_dir() {
             return Err(BuildError::GcRootNotADirectory);
         }
@@ -286,7 +288,7 @@ impl CallOpts {
         let output = cmd.output()?;
 
         if output.status.success() {
-            let paths: Vec<PathBuf> = ::nix::parse_nix_output(&output.stdout, PathBuf::from);
+            let paths: Vec<StorePath> = ::nix::parse_nix_output(&output.stdout, StorePath::from);
 
             if let Ok(vec1) = Vec1::from_vec(paths) {
                 Ok(vec1)
