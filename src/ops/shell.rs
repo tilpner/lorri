@@ -70,9 +70,9 @@ pub fn main(project: Project) -> OpResult {
     });
 
     Command::new("nix-shell")
-        .arg(shell_drv)
+        .arg(shell_drv.as_os_str())
         .env("NIX_BUILD_SHELL", format!("{}/bin/bash", bash.display()))
-        .env("LORRI_SHELL_ROOT", shell_drv)
+        .env("LORRI_SHELL_ROOT", shell_drv.as_os_str())
         .env("PROMPT_COMMAND", include_str!("./prompt.sh"))
         .status()
         .expect("Failed to execute bash");
