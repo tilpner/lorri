@@ -51,10 +51,7 @@ pub fn main(project: Project) -> OpResult {
 
     // the `shell` derivation is required in oder to start a shell
     // TODO: is this actually a derivation? Or an attribute?
-    let shell_drv = first_build
-        .named_drvs
-        .get("shell")
-        .expect("Failed to start the shell: no \"shell\" derivation found");
+    let shell_drv = first_build.output_paths.shell;
 
     let build_thread = {
         thread::spawn(move || {
