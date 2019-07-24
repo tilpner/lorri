@@ -92,9 +92,12 @@ fn print_build_event(ev: &Event) {
         }
         Event::Started => eprintln!("Evaluation started"),
         // show the last 5 lines of error output
-        Event::Failure(err) => eprintln!(
-            "Evaluation failed: \n{}",
-            err.log_lines[err.log_lines.len().saturating_sub(5)..].join("\n")
-        ),
+        Event::Failure(err) => {
+            let lines: Vec<String> = err.log_lines[err.log_lines.len().saturating_sub(5)..]
+                .iter()
+                .map(|s| s.to_string_lossy().into_owned())
+                .collect();
+            eprintln!("Evaluation failed: \n{}", lines.join("\n"))
+        }
     }
 }
